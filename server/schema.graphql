@@ -1,0 +1,79 @@
+type Query {
+  system: SystemStatus!
+  manager: ManagerStatus!
+  server(id: ID!): Server
+  servers: [Server!]!
+}
+
+type Subscription {
+  status: Status!
+}
+
+type Status {
+  system: SystemStatus!
+  manager: ManagerStatus!
+  server(id: ID!): Server
+  servers: [Server!]!
+}
+
+type SystemStatus {
+  usedMemory: Int!
+  totalMemory: Int!
+}
+
+type ManagerStatus {
+  pid: Int!
+  cpuLoad: Float!
+  usedMemory: Int!
+}
+
+type Server {
+  id: ID!
+  name: String!
+  status: ServerStatus
+  options: ServerOptions!
+}
+
+type ServerStatus {
+  ready: Boolean!
+  players: Int!
+  maxPlayers: Int!
+  pid: Int!
+  cpuLoad: Float!
+  memoryLoad: Float!
+  usedMemory: String!
+}
+
+type ServerOptions {
+  system: SystemOptions!
+  gameplay: GameplayOptions!
+
+  preExecArgs: String!
+  postExecArgs: String!
+  execString: String!
+}
+
+type SystemOptions {
+  serverX: Int!
+  serverY: Int!
+  port: Int!
+  queryPort: Int!
+  altSaveDirectoryName: String!
+  maxPlayers: Int!
+  reservedPlayerSlots: Int!
+  seamlessIp: String!
+  rconPort: Int
+  IpAddress: String!
+  hasPassword: Boolean!
+  battleEye: Boolean!
+}
+
+type GameplayOptions {
+  pve: Boolean!
+  allowAnyoneBabyImprintCuddle: Boolean!
+  enablePvpGamma: Boolean!
+  showFloatingDamageText: Boolean!
+  enableCrosshair: Boolean!
+  allowThirdPersonPlayer: Boolean!
+  mapPlayerLocation: Boolean!
+}

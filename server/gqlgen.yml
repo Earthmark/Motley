@@ -1,0 +1,24 @@
+# .gqlgen.yml example
+#
+# Refer to https://gqlgen.com/config/
+# for detailed .gqlgen.yml documentation.
+
+schema:
+  - schema.graphql
+exec:
+  filename: gen/generated.go
+  package: gen
+model:
+  filename: gen/models.go
+  package: gen
+resolver:
+  filename: core/resolver.go
+  package: core
+  type: Resolver
+models:
+  ServerOptions:
+    model: github.com/Earthmark/Motley/server/config.ServerOptions
+  GameplayOptions:
+    model: github.com/Earthmark/Motley/server/config.GameplayOptions
+  SystemOptions:
+    model: github.com/Earthmark/Motley/server/config.SystemOptions
