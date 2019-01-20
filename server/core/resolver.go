@@ -27,10 +27,9 @@ type subscriptionResolver struct {
 	statusListeners     map[int64]chan gen.Status
 }
 
-func CreateResolver(conf *config.Config) (gen.ResolverRoot, error) {
-	m, err := model.Start(conf)
+func CreateResolver(conf *config.Config) gen.ResolverRoot {
 	r := &resolver{
-		m: m,
+		m: model.Create(conf),
 		t: time.NewTicker(time.Duration(conf.StatusRateSeconds) * time.Second),
 		s: &subscriptionResolver{
 			statusListenersLock: sync.Mutex{},
@@ -39,13 +38,9 @@ func CreateResolver(conf *config.Config) (gen.ResolverRoot, error) {
 		},
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
 	go r.updateLoop()
 
-	return r, nil
+	return r
 }
 
 func (r *resolver) updateLoop() {
@@ -55,16 +50,16 @@ func (r *resolver) updateLoop() {
 }
 
 func (r *resolver) update() {
-	r.m.Update()
+	status := r.m.Update()
 	r.s.statusListenersLock.Lock()
 	defer r.s.statusListenersLock.Unlock()
 	for _, c := range r.s.statusListeners {
-		c <- r.m.Status
+		c <- status
 	}
 }
 
 func (r *resolver) Query() gen.QueryResolver {
-	return &queryResolver{r}
+	return r
 }
 
 type queryResolver struct {
@@ -97,17 +92,6 @@ func (q *subscriptionResolver) Status(ctx context.Context) (<-chan gen.Status, e
 	return statusChan, nil
 }
 
-func (q *queryResolver) System(ctx context.Context) (gen.SystemStatus, error) {
-	return q.r.m.Status.System, nil
-}
-
-func (q *queryResolver) Manager(ctx context.Context) (gen.ManagerStatus, error) {
-	return q.r.m.Status.Manager, nil
-}
-
-func (q *queryResolver) Server(ctx context.Context, id string) (*gen.Server, error) {
-	panic("not implemented")
-}
-func (q *queryResolver) Servers(ctx context.Context) ([]gen.Server, error) {
-	panic("not implemented")
+func (r *resolver) Status(ctx context.Context) (gen.Status, error) {
+	return r.m.Status, nil
 }

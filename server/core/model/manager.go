@@ -3,15 +3,16 @@ package model
 import (
 	"errors"
 	"log"
+	"os"
 	"sync"
 
 	"github.com/Earthmark/Motley/server/config"
+	"github.com/Earthmark/Motley/server/core/status"
 	"github.com/Earthmark/Motley/server/gen"
 )
 
 type Manager struct {
-	conf      *config.Config
-	serverDir string
+	conf *config.Config
 
 	Status gen.Status
 
@@ -19,8 +20,7 @@ type Manager struct {
 	servers    map[string]*server
 }
 
-func Start(conf *config.Config) (*Manager, error) {
-
+func Create(conf *config.Config) *Manager {
 	m := &Manager{
 		conf:       conf,
 		serverLock: sync.Mutex{},
@@ -31,7 +31,42 @@ func Start(conf *config.Config) (*Manager, error) {
 		m.Add(i, c)
 	}
 
-	return m, nil
+	return m
+}
+
+func (m *Manager) managerStatus() gen.ManagerStatus {
+	manager := status.Proc(os.Getpid())
+	return gen.ManagerStatus{
+		Pid:        manager.Pid,
+		UsedMemory: manager.UsedMemory,
+		CPULoad:    manager.CPULoad,
+	}
+}
+
+func (m *Manager) serverStatus() []gen.Server {
+	servers := make([]gen.Server, 0)
+	for id, s := range m.servers {
+		if s.p != nil {
+			s.p.Enforce()
+		}
+		servers = append(servers, gen.Server{
+			ID:      id,
+			Name:    id,
+			Options: s.conf,
+			Status:  s.status(),
+		})
+	}
+	return servers
+}
+
+func (m *Manager) Update() gen.Status {
+	status := gen.Status{
+		Manager: m.managerStatus(),
+		System:  status.System(),
+		Servers: m.serverStatus(),
+	}
+	m.Status = status
+	return status
 }
 
 func (m *Manager) Start(id string) error {

@@ -1,7 +1,5 @@
 type Query {
-  system: SystemStatus!
-  manager: ManagerStatus!
-  servers: [Server!]!
+  status: Status!
 }
 
 type Subscription {
@@ -29,6 +27,7 @@ type ManagerStatus {
 type Server {
   id: ID!
   name: String!
+  runError: String
   status: ServerStatus
   options: ServerOptions!
 }

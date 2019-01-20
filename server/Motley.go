@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/99designs/gqlgen/handler"
@@ -30,10 +31,14 @@ func main() {
 		log.Fatalf("Failed to load config file, %v", err)
 	}
 
-	resolver, err := core.CreateResolver(conf)
-	if err != nil {
-		log.Fatal(err)
+	if _, err := os.Stat(conf.ShooterGame); err != nil {
+		log.Fatalf("Failed to query file pointed to by root level property 'shooterGame' in config file, does it point to the atlas server? %v", err)
 	}
+	if conf.StatusRateSeconds < 1 {
+		log.Fatal("Root level property 'statusRateSeconds' in config file was less than 1 or was not defined, it must be a positive integer.")
+	}
+
+	resolver := core.CreateResolver(conf)
 
 	http.Handle("/playground", handler.Playground("GraphQL playground", "/api"))
 	http.Handle("/api", handler.GraphQL(gen.NewExecutableSchema(gen.Config{Resolvers: resolver})))
