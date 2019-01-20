@@ -9,47 +9,58 @@ import (
 	"time"
 
 	"github.com/Earthmark/Motley/server/config"
+	"github.com/Earthmark/Motley/server/core/model"
 	"github.com/Earthmark/Motley/server/gen"
 )
 
 type resolver struct {
-	configPath string
-	config     config.Config
+	m *model.Manager
+	t *time.Ticker
 
-	statusTicker        *time.Ticker
+	s *subscriptionResolver
+}
+
+type subscriptionResolver struct {
+	r                   *resolver
 	statusListenersLock sync.Mutex
 	statusListenerIdx   int64
 	statusListeners     map[int64]chan gen.Status
-	status              gen.Status
 }
 
-func CreateResolver(configSource string, conf config.Config) (gen.ResolverRoot, error) {
-	resol := &resolver{
-		configPath:          configSource,
-		config:              conf,
-		statusTicker:        time.NewTicker(time.Second * 1),
-		statusListenersLock: sync.Mutex{},
-		statusListenerIdx:   0,
-		statusListeners:     make(map[int64]chan gen.Status),
+func CreateResolver(conf *config.Config) (gen.ResolverRoot, error) {
+	m, err := model.Start(conf)
+	r := &resolver{
+		m: m,
+		t: time.NewTicker(time.Duration(conf.StatusRateSeconds) * time.Second),
+		s: &subscriptionResolver{
+			statusListenersLock: sync.Mutex{},
+			statusListenerIdx:   0,
+			statusListeners:     make(map[int64]chan gen.Status),
+		},
 	}
 
-	for _, options := range conf.Servers {
-		resol.addServer(options)
+	if err != nil {
+		return nil, err
 	}
 
-	go func() {
-		for range resol.statusTicker.C {
-			status := UpdateSystemMetrics()
-			resol.status = status
-			resol.statusListenersLock.Lock()
-			for _, ch := range resol.statusListeners {
-				ch <- status
-			}
-			resol.statusListenersLock.Unlock()
-		}
-	}()
+	go r.updateLoop()
 
-	return resol, nil
+	return r, nil
+}
+
+func (r *resolver) updateLoop() {
+	for range r.t.C {
+		r.update()
+	}
+}
+
+func (r *resolver) update() {
+	r.m.Update()
+	r.s.statusListenersLock.Lock()
+	defer r.s.statusListenersLock.Unlock()
+	for _, c := range r.s.statusListeners {
+		c <- r.m.Status
+	}
 }
 
 func (r *resolver) Query() gen.QueryResolver {
@@ -61,11 +72,7 @@ type queryResolver struct {
 }
 
 func (r *resolver) Subscription() gen.SubscriptionResolver {
-	return &subscriptionResolver{r}
-}
-
-type subscriptionResolver struct {
-	r *resolver
+	return r.s
 }
 
 func (r *resolver) addServer(options config.ServerOptions) {
@@ -75,27 +82,27 @@ func (r *resolver) addServer(options config.ServerOptions) {
 func (q *subscriptionResolver) Status(ctx context.Context) (<-chan gen.Status, error) {
 	statusChan := make(chan gen.Status, 1)
 
-	q.r.statusListenersLock.Lock()
-	idx := q.r.statusListenerIdx
-	q.r.statusListenerIdx = idx + 1
-	q.r.statusListeners[idx] = statusChan
-	q.r.statusListenersLock.Unlock()
+	q.statusListenersLock.Lock()
+	idx := q.statusListenerIdx
+	q.statusListenerIdx = idx + 1
+	q.statusListeners[idx] = statusChan
+	q.statusListenersLock.Unlock()
 	go func() {
 		<-ctx.Done()
-		q.r.statusListenersLock.Lock()
-		delete(q.r.statusListeners, idx)
-		q.r.statusListenersLock.Unlock()
+		q.statusListenersLock.Lock()
+		delete(q.statusListeners, idx)
+		q.statusListenersLock.Unlock()
 	}()
 
 	return statusChan, nil
 }
 
 func (q *queryResolver) System(ctx context.Context) (gen.SystemStatus, error) {
-	return q.r.status.System, nil
+	return q.r.m.Status.System, nil
 }
 
 func (q *queryResolver) Manager(ctx context.Context) (gen.ManagerStatus, error) {
-	return q.r.status.Manager, nil
+	return q.r.m.Status.Manager, nil
 }
 
 func (q *queryResolver) Server(ctx context.Context, id string) (*gen.Server, error) {

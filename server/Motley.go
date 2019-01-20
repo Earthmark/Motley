@@ -10,6 +10,7 @@ import (
 	"github.com/99designs/gqlgen/handler"
 	"github.com/Earthmark/Motley/server/config"
 	"github.com/Earthmark/Motley/server/core"
+	"github.com/Earthmark/Motley/server/core/spa"
 	"github.com/Earthmark/Motley/server/gen"
 )
 
@@ -24,21 +25,21 @@ func main() {
 	}
 	log.Printf("Loading config %s", path)
 
-	config, err := config.LoadOrInit(path)
+	conf, err := config.Load(*configPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to load config file, %v", err)
 	}
-	port := config.Port
-	resolver, err := core.CreateResolver(path, *config)
+
+	resolver, err := core.CreateResolver(conf)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	http.Handle("/playground", handler.Playground("GraphQL playground", "/api"))
 	http.Handle("/api", handler.GraphQL(gen.NewExecutableSchema(gen.Config{Resolvers: resolver})))
-	http.Handle("/", http.FileServer(core.SpaFileSystem(core.Client)))
+	http.Handle("/", http.FileServer(spa.SpaFileSystem(core.Client)))
 
-	log.Printf("http://localhost:%d for Motley client", port)
-	log.Printf("http://localhost:%d/playground for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+	log.Printf("http://localhost:%d for Motley client", conf.Port)
+	log.Printf("http://localhost:%d/playground for GraphQL playground", conf.Port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", conf.Port), nil))
 }

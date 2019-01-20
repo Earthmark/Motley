@@ -1,7 +1,6 @@
 type Query {
   system: SystemStatus!
   manager: ManagerStatus!
-  server(id: ID!): Server
   servers: [Server!]!
 }
 
@@ -12,11 +11,11 @@ type Subscription {
 type Status {
   system: SystemStatus!
   manager: ManagerStatus!
-  server(id: ID!): Server
   servers: [Server!]!
 }
 
 type SystemStatus {
+  cpuLoad: Float!
   usedMemory: Int!
   totalMemory: Int!
 }
@@ -35,25 +34,14 @@ type Server {
 }
 
 type ServerStatus {
-  ready: Boolean!
   players: Int!
   maxPlayers: Int!
   pid: Int!
   cpuLoad: Float!
-  memoryLoad: Float!
-  usedMemory: String!
+  usedMemory: Int!
 }
 
 type ServerOptions {
-  system: SystemOptions!
-  gameplay: GameplayOptions!
-
-  preExecArgs: String!
-  postExecArgs: String!
-  execString: String!
-}
-
-type SystemOptions {
   serverX: Int!
   serverY: Int!
   port: Int!
@@ -63,17 +51,7 @@ type SystemOptions {
   reservedPlayerSlots: Int!
   seamlessIp: String!
   rconPort: Int
-  IpAddress: String!
-  hasPassword: Boolean!
   battleEye: Boolean!
-}
-
-type GameplayOptions {
-  pve: Boolean!
-  allowAnyoneBabyImprintCuddle: Boolean!
-  enablePvpGamma: Boolean!
-  showFloatingDamageText: Boolean!
-  enableCrosshair: Boolean!
-  allowThirdPersonPlayer: Boolean!
-  mapPlayerLocation: Boolean!
+  preExecArgs: String!
+  postExecArgs: [String!]
 }
