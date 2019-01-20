@@ -62,6 +62,10 @@ func (r *resolver) Query() gen.QueryResolver {
 	return r
 }
 
+func (r *resolver) Mutation() gen.MutationResolver {
+	return nil
+}
+
 type queryResolver struct {
 	r *resolver
 }

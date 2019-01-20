@@ -46,14 +46,21 @@ func (m *Manager) managerStatus() gen.ManagerStatus {
 func (m *Manager) serverStatus() []gen.Server {
 	servers := make([]gen.Server, 0)
 	for id, s := range m.servers {
+		var err *string
 		if s.p != nil {
-			s.p.Enforce()
+			var e error
+			_, e = s.p.Enforce()
+			if e != nil {
+				s := e.Error()
+				err = &s
+			}
 		}
 		servers = append(servers, gen.Server{
-			ID:      id,
-			Name:    id,
-			Options: s.conf,
-			Status:  s.status(),
+			ID:       id,
+			Name:     id,
+			Options:  *s.conf,
+			Status:   s.status(),
+			RunError: err,
 		})
 	}
 	return servers
@@ -97,7 +104,7 @@ func (m *Manager) Stop(id string) error {
 	return errors.New("server with the provided ID was not found")
 }
 
-func (m *Manager) Add(id string, conf config.ServerOptions) error {
+func (m *Manager) Add(id string, conf *config.ServerOptions) error {
 	m.serverLock.Lock()
 	defer m.serverLock.Unlock()
 	if _, ok := m.servers[id]; ok {

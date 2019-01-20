@@ -32,17 +32,17 @@ func Default() *Config {
 	return &Config{
 		StatusRateSeconds: 3,
 		Port:              5000,
-		Servers:           make(map[string]ServerOptions),
+		Servers:           make(map[string]*ServerOptions),
 	}
 }
 
 type Config struct {
-	Path string
+	Path string `yaml:"-"`
 
-	ShooterGame       string                   `yaml:"shooterGame"`
-	StatusRateSeconds int                      `yaml:"statusRateSeconds"`
-	Port              int                      `yaml:"port"`
-	Servers           map[string]ServerOptions `yaml:"servers"`
+	ShooterGame       string                    `yaml:"shooterGame"`
+	StatusRateSeconds int                       `yaml:"statusRateSeconds"`
+	Port              int                       `yaml:"port"`
+	Servers           map[string]*ServerOptions `yaml:"servers"`
 }
 
 type ServerOptions struct {
@@ -53,7 +53,6 @@ type ServerOptions struct {
 	QueryPort            int      `yaml:"queryPort"`
 	RconPort             *int     `yaml:"rconPort"`
 	SeamlessIP           string   `yaml:"seamlessIp"`
-	IPAddress            string   `yaml:"IpAddress"`
 	AltSaveDirectoryName string   `yaml:"altSaveDirectoryName"`
 	MaxPlayers           int      `yaml:"maxPlayers"`
 	ReservedPlayerSlots  int      `yaml:"reservedPlayerSlots"`

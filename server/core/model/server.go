@@ -16,13 +16,13 @@ import (
 // TODO: Add RCON channel and other stuff.
 type server struct {
 	exec    string
-	conf    config.ServerOptions
+	conf    *config.ServerOptions
 	pLock   sync.Mutex
 	p       *proc.EnforcedProcess
 	updated func()
 }
 
-func bindServer(exec string, conf config.ServerOptions, updatedCallback func()) *server {
+func bindServer(exec string, conf *config.ServerOptions, updatedCallback func()) *server {
 	s := &server{
 		exec:    exec,
 		conf:    conf,
