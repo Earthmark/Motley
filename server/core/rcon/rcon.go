@@ -43,7 +43,6 @@ func Dial(address string, password string) (*Client, error) {
 			err := client.routeMsg()
 			if err != nil {
 				log.Printf("Error reading rcon channel %v", err)
-				return
 			}
 		}
 	}()
@@ -157,6 +156,7 @@ func (c *Client) routeMsg() error {
 	if err != nil {
 		return err
 	}
+	log.Printf("Recieved %v", packet)
 	c.notifyLock.Lock()
 	handler, ok := c.redirector[packet.ID]
 	if ok {

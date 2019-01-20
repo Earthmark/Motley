@@ -54,6 +54,7 @@ type ServerOptions struct {
 	RconPort             *int     `yaml:"rconPort"`
 	SeamlessIP           string   `yaml:"seamlessIp"`
 	AltSaveDirectoryName string   `yaml:"altSaveDirectoryName"`
+	Password             string   `yaml:"password"`
 	MaxPlayers           int      `yaml:"maxPlayers"`
 	ReservedPlayerSlots  int      `yaml:"reservedPlayerSlots"`
 	BattleEye            bool     `yaml:"battleEye"`

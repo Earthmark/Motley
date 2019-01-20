@@ -9,17 +9,19 @@ import (
 
 	"github.com/Earthmark/Motley/server/config"
 	"github.com/Earthmark/Motley/server/core/proc"
+	"github.com/Earthmark/Motley/server/core/rcon"
 	"github.com/Earthmark/Motley/server/core/status"
 	"github.com/Earthmark/Motley/server/gen"
 )
 
 // TODO: Add RCON channel and other stuff.
 type server struct {
-	exec    string
-	conf    *config.ServerOptions
-	pLock   sync.Mutex
-	p       *proc.EnforcedProcess
-	updated func()
+	exec       string
+	conf       *config.ServerOptions
+	pLock      sync.Mutex
+	p          *proc.EnforcedProcess
+	rconClient *rcon.Client
+	updated    func()
 }
 
 func bindServer(exec string, conf *config.ServerOptions, updatedCallback func()) *server {
@@ -45,6 +47,15 @@ func (s *server) status() *gen.ServerStatus {
 			s.conf.Pid = s.p.Pid
 			s.updated()
 		}
+		if s.rconClient == nil && s.conf.RconPort != nil {
+			rconClient, err := rcon.Dial(fmt.Sprintf("localhost:%d", *s.conf.RconPort), s.conf.Password)
+			if err != nil {
+				log.Printf("Failed to connect to server rcon, %v", err)
+			} else {
+				s.rconClient = rconClient
+			}
+		}
+
 		b := status.Proc(pid)
 		return &gen.ServerStatus{
 			Players:    -1,
